@@ -1,5 +1,6 @@
 package com.samsung.android.scan3d.http
 
+import com.samsung.android.scan3d.serv.CamEngine
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.*
@@ -14,6 +15,7 @@ import java.io.OutputStream
 class HttpService {
     lateinit var engine: NettyApplicationEngine
     var channel = Channel<ByteArray>(2)
+    var camengine: CamEngine? = null
     fun producer(): suspend OutputStream.() -> Unit = {
         val o = this
         channel = Channel()
@@ -28,6 +30,10 @@ class HttpService {
             routing {
                 get("/cam") {
                     call.respondText("Ok")
+                }
+                get("/cam.jpg") {
+                    val image  = camengine?.captureCameraImage()!!
+                    call.respondBytes(image, ContentType.Image.JPEG)
                 }
                 get("/cam.mjpeg") {
                     call.respondOutputStream(

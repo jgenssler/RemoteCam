@@ -94,6 +94,7 @@ class Cam : Service() {
 
             "start_camera_engine" -> {
                 engine = CamEngine(this)
+                http?.camengine = engine
                 engine?.http = http
                 runBlocking { engine?.initializeCamera() }
             }

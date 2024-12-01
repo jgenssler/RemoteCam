@@ -32,6 +32,8 @@ import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.Semaphore
+
 class CamEngine(val context: Context) {
 
     var http: HttpService? = null
@@ -112,7 +114,7 @@ class CamEngine(val context: Context) {
 
     private var session: CameraCaptureSession? = null
 
-    private fun stopRunning() {
+    fun stopRunning() {
         if (session != null) {
             Log.i("CAMERA", "close")
             session!!.stopRepeating()
@@ -294,6 +296,68 @@ class CamEngine(val context: Context) {
             cameraHandler
         )
         updateView()
+    }
+
+    suspend fun captureCameraImage(): ByteArray? {
+        Log.i("CAMERA", "captureCameraImage")
+
+        initializeCamera()
+
+        // Allow camera to auto focus
+        Thread.sleep(2_000)
+
+        val captureLock = Semaphore(0)
+        var capturedImage: ByteArray? = null
+
+        val imageAvailableListener = ImageReader.OnImageAvailableListener { reader ->
+            val image = reader.acquireNextImage()
+            if (image != null) {
+                try {
+                    val buffer = image.planes[0].buffer
+                    val bytes = ByteArray(buffer.remaining()).apply { buffer.get(this) }
+                    capturedImage = bytes
+                    Log.i("CAMERA", "Image captured")
+                } catch (e: Exception) {
+                    Log.e("CAMERA", "Error capturing image: ${e.message}", e)
+                } finally {
+                    image.close()
+                    captureLock.release()
+                }
+            }
+        }
+
+        // Set up the image reader to listen for a single image
+        imageReader.setOnImageAvailableListener(imageAvailableListener, cameraHandler)
+
+        val captureRequestBuilder = camera.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE).apply {
+            addTarget(imageReader.surface)
+            set(CaptureRequest.JPEG_QUALITY, viewState.quality.toByte())
+        }
+
+        session?.capture(
+            captureRequestBuilder.build(),
+            object : CameraCaptureSession.CaptureCallback() {
+                override fun onCaptureCompleted(
+                    session: CameraCaptureSession,
+                    request: CaptureRequest,
+                    result: TotalCaptureResult
+                ) {
+                    super.onCaptureCompleted(session, request, result)
+                    Log.i("CAMERA", "Capture request completed")
+                }
+            },
+            cameraHandler
+        )
+
+        // Wait for the image to be captured
+        captureLock.acquire()
+
+        // Clean up listener to prevent memory leaks
+        imageReader.setOnImageAvailableListener(null, null)
+
+        stopRunning()
+
+        return capturedImage
     }
 
     fun destroy() {
