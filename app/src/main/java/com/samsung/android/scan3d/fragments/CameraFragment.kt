@@ -63,7 +63,7 @@ class CameraFragment : Fragment() {
     var resH = 720
 
     var viewState =
-        ViewState(true, stream = false, cameraId = "0", quality = 80, resolutionIndex = null)
+        ViewState(true, stream = false, cameraId = "2", quality = 100, resolutionIndex = 17)
 
     lateinit var Cac: CameraActivity
 

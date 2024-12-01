@@ -88,9 +88,9 @@ class CamEngine(val context: Context) {
     var viewState: CameraFragment.Companion.ViewState = CameraFragment.Companion.ViewState(
         true,
         stream = false,
-        cameraId = "0",
-        quality = 80,
-        resolutionIndex = null
+        cameraId = "2",
+        quality = 100,
+        resolutionIndex = 17
     )
 
     /** [CameraCharacteristics] corresponding to the provided Camera ID */
