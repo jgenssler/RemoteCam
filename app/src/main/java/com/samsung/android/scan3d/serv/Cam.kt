@@ -107,7 +107,12 @@ class Cam : Service() {
                 engine?.viewState =  new
                 if (old != new) {
                     Log.i("CAM", "diff")
-                    engine?.restart()
+                    if(new.preview) {
+                        engine?.restart()
+                    }
+                    else {
+                        engine?.stopRunning()
+                    }
                 }
             }
 
