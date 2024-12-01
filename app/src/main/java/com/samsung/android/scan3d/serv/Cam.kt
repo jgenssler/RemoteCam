@@ -24,7 +24,7 @@ class Cam : Service() {
     var engine: CamEngine? = null
     var http: HttpService? = null
     val CHANNEL_ID = "REMOTE_CAM"
-
+    private lateinit var wifiLockManager: WifiLockManager
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.i("CAM", "onStartCommand " + intent?.action)
@@ -78,6 +78,8 @@ class Cam : Service() {
                 http = HttpService()
                 http?.main()
 
+                wifiLockManager = WifiLockManager(this)
+                wifiLockManager.acquireWifiLock()
             }
 
             "onPause" -> {
@@ -146,6 +148,7 @@ class Cam : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
+        wifiLockManager.releaseWifiLock()
         Log.i("CAM", "OnDestroy")
         kill()
     }
